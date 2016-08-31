@@ -35,10 +35,13 @@ mod_extract.aliquot <- function(
   }
   # ------------------------------------------------------------------------------
 
-  protocol <- object@protocol
   nRecord <- length(object@records)
 
-  temp.id <- 0
+  #temp.id <- 0
+
+  #----------------------------------------------------------------------------------------------
+  # Generate TLum.Analysis
+  #----------------------------------------------------------------------------------------------
 
   new.records <- list()
 
@@ -49,17 +52,37 @@ mod_extract.aliquot <- function(
 
     if(temp.position %in% list) {
 
-      temp.id <- temp.id+1
-
-      temp.curve@metadata$ID <- temp.id
+      #temp.id <- temp.id+1
+      #temp.curve@metadata$ID <- temp.id
 
       new.records <- c(new.records, temp.curve)
 
     }
   }
 
-  new.analysis <- set_TLum.Analysis(records = new.records,
-                                    protocol = protocol)
+  new.protocol <- object@protocol
 
+  new.history <- c(object@history,
+                   as.character(match.call()[[1]])
+                   )
+
+  new.plotData <- list()
+
+  new.plotHistory <- object@plotHistory
+  new.plotHistory[[length(new.plotHistory)+1]] <- new.plotData
+
+
+  new.analysis <- set_TLum.Analysis(records = new.records,
+                                    protocol = new.protocol,
+                                    history = new.history,
+                                    plotHistory = new.plotHistory)
+
+  #----------------------------------------------------------------------------------------------
+  #Plot results
+  #----------------------------------------------------------------------------------------------
+
+  #----------------------------------------------------------------------------------------------
+  #Return results
+  #----------------------------------------------------------------------------------------------
   return(new.analysis)
 }

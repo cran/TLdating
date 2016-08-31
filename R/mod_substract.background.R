@@ -55,18 +55,7 @@ mod_substract.background <- function(
   }
   # ------------------------------------------------------------------------------
 
-  protocol <- object@protocol
-
   nRecords <- length(object@records)
-
-  no.plot <- plotting.parameters$no.plot
-
-  # ------------------------------------------------------------------------------
-  # Value check
-  if(is.null(no.plot) || is.na(no.plot) || !is.logical(no.plot)){
-    no.plot <- FALSE
-  }
-  # ------------------------------------------------------------------------------
 
   #Extract BG & TL
   test.background <- logical()
@@ -112,7 +101,7 @@ mod_substract.background <- function(
   #Background substraction
   #----------------------------------------------------------------------------------------------
 
-  if(identical(TL.temperature,BG.temperature)){
+  if(identical(TL.temperature, BG.temperature)){
     new.TL <- TL - BG
     new.TL.error <- sqrt(TL.error^2 + BG.error^2)
   }else{
@@ -121,65 +110,93 @@ mod_substract.background <- function(
 
   temperatures <- TL.temperature[,1]
   for(i in 1:ncol(TL.temperature)){
-    if(!identical(temperatures,TL.temperature[,i])){
+    if(!identical(temperatures, TL.temperature[,i])){
       stop("[mod_substract.background] Error: All TL do not have the same temperature vector.")
     }
   }
-  #----------------------------------------------------------------------------------------------
-  #Plot results
-  #----------------------------------------------------------------------------------------------
-
-  if(no.plot==FALSE){
-    plot_substract.background(old.TL=TL,
-                              BG=BG,
-                              new.TL=new.TL,
-                              temperatures=temperatures)
-  }
 
 
   #----------------------------------------------------------------------------------------------
-  # New BinFileData
+  # Generate TLum.Analysis
   #----------------------------------------------------------------------------------------------
 
 
   new.records <- list()
+  temp.i <- 0
 
   if(keep.background == FALSE){
-
-    temp.id <- 0
 
     for(i in 1:nRecords){
       temp.record <- object@records[[i]]
 
       if(test.background[i] == FALSE) {
 
-        temp.id <- temp.id+1
-        temp.record@metadata$ID <- temp.id
+        temp.i <- temp.i+1
+        #temp.record@metadata$ID <- temp.i
 
-        temp.record@data <- new.TL[,temp.id]
-        temp.record@error <- new.TL.error[,temp.id]
+        temp.record@data <- new.TL[,temp.i]
+        temp.record@error <- new.TL.error[,temp.i]
 
         new.records <- c(new.records,temp.record)
       }
     }
-  }else{
-    #If keep.background == TRUE... for "analyse_SAR.TL"
+
+  }else{     #If keep.background == TRUE... for "analyse_SAR.TL"
+
     for(i in 1:nRecords){
       temp.record <- object@records[[i]]
 
       if(test.background[i] == FALSE) {
 
-        temp.record@data <- new.TL[,temp.id]
-        temp.record@error <- new.TL.error[,temp.id]
+        temp.i <- temp.i+1
+
+        temp.record@data <- new.TL[,temp.i]
+        temp.record@error <- new.TL.error[,temp.i]
       }
 
       new.records <- c(new.records,temp.record)
     }
   }
 
+  new.protocol <- object@protocol
+
+  new.history <- c(object@history,
+                   as.character(match.call()[[1]]))
+
+  new.plotData <- list(old.TL=TL,
+                       BG=BG,
+                       new.TL=new.TL,
+                       temperatures=temperatures)
+
+  new.plotHistory <- object@plotHistory
+  new.plotHistory[[length(new.plotHistory)+1]] <- new.plotData
+
   # new Analysis
   new.TLum.Analysis <- set_TLum.Analysis(records= new.records,
-                                         protocol=protocol)
+                                         protocol=new.protocol,
+                                         history = new.history,
+                                         plotHistory = new.plotHistory)
+
+  #----------------------------------------------------------------------------------------------
+  #Plot results
+  #----------------------------------------------------------------------------------------------
+  no.plot <- plotting.parameters$no.plot
+
+  # ------------------------------------------------------------------------------
+  # Value check
+  if(is.null(no.plot) || is.na(no.plot) || !is.logical(no.plot)){
+    no.plot <- FALSE
+  }
+  # ------------------------------------------------------------------------------
+
+  if(no.plot == FALSE){
+    do.call(plot_substract.background,
+            new.plotData)
+  }
+
+  #----------------------------------------------------------------------------------------------
+  #Return results
+  #----------------------------------------------------------------------------------------------
 
   return(new.TLum.Analysis)
 }

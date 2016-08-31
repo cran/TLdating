@@ -50,17 +50,7 @@ mod_extract.preheat <- function(
   }
   # ------------------------------------------------------------------------------
 
-  protocol <- object@protocol
   nRecords <- length(object@records)
-
-  no.plot <- plotting.parameters$no.plot
-
-  # ------------------------------------------------------------------------------
-  # Value check
-  if(is.null(no.plot) || is.na(no.plot) || !is.logical(no.plot)){
-    no.plot <- FALSE
-  }
-  # ------------------------------------------------------------------------------
 
   test.preheat <- logical()
 
@@ -120,24 +110,12 @@ mod_extract.preheat <- function(
     }
   }
 
-  #--------------------------------------------------------------------------------------------------------
-  #Plot results
-  #--------------------------------------------------------------------------------------------------------
-
-  if(!no.plot){
-    plot_remove.preheat(PH.signal=PH,
-                        PH.temperatures=PH.temperatures,
-                        PH.times=PH.times,
-                        TL.signal=TL,
-                        TL.temperatures=TL.temperatures)
-  }
-
-  # -------------------------------------------------------------------------------------------------------------------
-  #New BIN.file
-  # -------------------------------------------------------------------------------------------------------------------
 
 
-  temp.id <- 0
+  #----------------------------------------------------------------------------------------------
+  # Generate TLum.Analysis
+  #----------------------------------------------------------------------------------------------
+  #temp.id <- 0
 
   new.records <- list()
 
@@ -146,16 +124,54 @@ mod_extract.preheat <- function(
 
     if(test.preheat[i] == TRUE) {
 
-      temp.id <- temp.id+1
-
-      temp.record@metadata$ID <- temp.id
+      #temp.id <- temp.id+1
+      #temp.record@metadata$ID <- temp.id
 
       new.records <- c(new.records, temp.record)
     }
   }
 
+  new.protocol <- object@protocol
+
+  new.history <- c(object@history,
+                   as.character(match.call()[[1]])
+                   )
+
+  new.plotData <- list(PH.signal=PH,
+                       PH.temperatures=PH.temperatures,
+                       PH.times=PH.times,
+                       TL.signal=TL,
+                       TL.temperatures=TL.temperatures)
+
+  new.plotHistory <- object@plotHistory
+  new.plotHistory[[length(new.plotHistory)+1]] <- new.plotData
+
+
   new.analysis <- set_TLum.Analysis(records = new.records,
-                                    protocol = protocol)
+                                    protocol = new.protocol,
+                                    history = new.history,
+                                    plotHistory = new.plotHistory)
+
+  #--------------------------------------------------------------------------------------------------------
+  #Plot results
+  #--------------------------------------------------------------------------------------------------------
+  no.plot <- plotting.parameters$no.plot
+
+  # ------------------------------------------------------------------------------
+  # Value check
+  if(is.null(no.plot) || is.na(no.plot) || !is.logical(no.plot)){
+    no.plot <- FALSE
+  }
+  # ------------------------------------------------------------------------------
+
+  if(!no.plot){
+    do.call(plot_remove.preheat,
+            new.plotData)
+  }
+
+  #----------------------------------------------------------------------------------------------
+  #Return results
+  #----------------------------------------------------------------------------------------------
 
   return(new.analysis)
 }

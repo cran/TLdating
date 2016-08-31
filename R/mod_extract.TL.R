@@ -70,21 +70,11 @@ mod_extract.TL <- function(
   }
   # ------------------------------------------------------------------------------
 
-  no.plot <- plotting.parameters$no.plot
-
-  # ------------------------------------------------------------------------------
-  # Value check
-  if(is.null(no.plot) || is.na(no.plot) || !is.logical(no.plot)){
-    no.plot <- FALSE
-  }
-  # ------------------------------------------------------------------------------
-
-  new.protocol <- object@protocol
   records <- object@records
 
   nRecords <- length(records)
 
-  new.records <- list()
+  kept.records <- list()
   rejected.records <- list()
 
   TL <- list()
@@ -92,7 +82,7 @@ mod_extract.TL <- function(
 
   test.TL <- vector()
 
-  new.id <- 1
+  #new.id <- 1
 
   for(i in 1:nRecords){
     temp.curve <- records[[i]]
@@ -111,10 +101,10 @@ mod_extract.TL <- function(
       temperatures <- c(temperatures, temp.temperatures)
 
       new.curve <- temp.curve
-      new.curve@metadata$ID <- new.id
-      new.id <- new.id+1
+      #new.curve@metadata$ID <- new.id
+      #new.id <- new.id+1
 
-      new.records <- c(new.records, new.curve)
+      kept.records <- c(kept.records, new.curve)
     }else{
       temp.test <- FALSE
       rejected.records <- c(rejected.records, temp.curve)
@@ -123,21 +113,49 @@ mod_extract.TL <- function(
     test.TL <- c(test.TL,temp.test)
   }
 
+  #----------------------------------------------------------------------------------------------
+  # Generate TLum.Analysis
+  #----------------------------------------------------------------------------------------------
+
+  new.records <- kept.records
+
+  new.protocol <- object@protocol
+
+  new.history <- c(object@history,
+                   as.character(match.call()[[1]]))
+
+  new.plotData <- list(TL=TL,
+                       temperatures=temperatures)
+
+  new.plotHistory <- object@plotHistory
+  new.plotHistory[[length(new.plotHistory)+1]] <- new.plotData
+
   new.TLum.Analysis <- set_TLum.Analysis(records= new.records,
-                                         protocol=new.protocol)
+                                         protocol=new.protocol,
+                                         history = new.history,
+                                         plotHistory = new.plotHistory)
 
   #--------------------------------------------------------------------------------------------------------
   #Plot results
   #--------------------------------------------------------------------------------------------------------
 
+  no.plot <- plotting.parameters$no.plot
+
+  # ------------------------------------------------------------------------------
+  # Value check
+  if(is.null(no.plot) || is.na(no.plot) || !is.logical(no.plot)){
+    no.plot <- FALSE
+  }
+  # ------------------------------------------------------------------------------
+
   if(!no.plot){
-    plot_extract.TL(TL=TL, temperatures=temperatures)
+    do.call(plot_extract.TL,
+            new.plotData)
   }
 
-  # -------------------------------------------------------------------------------------------------------------------
-  #New TLum.Analyis
-  # -------------------------------------------------------------------------------------------------------------------
-
+  #----------------------------------------------------------------------------------------------
+  #Return results
+  #----------------------------------------------------------------------------------------------
 
   return(new.TLum.Analysis)
 
